@@ -15,6 +15,8 @@ public class MyAI extends AI {
 	private static Random RANDOM = new Random();
 
 	private boolean logdetails = false;
+	private int maxIterations = 100000000;
+	private int logAfterNIterations = 100000;
 
 	@Override
 	public void start(Board board) {
@@ -27,7 +29,6 @@ public class MyAI extends AI {
 		Path path;
 		int value;
 		int counter = -1;
-		int maxIterations = 1000;
 		while (true) {
 
 			counter++;
@@ -64,9 +65,9 @@ public class MyAI extends AI {
 	}
 
 	private void setWinner(Board board, Node root, int counter) {
-		Node winner = chooseBest(root);
+		Node winner = chooseBest(root, false);
 		int column = winner.getColumn();
-		if (logdetails) {
+		if (logdetails || counter % logAfterNIterations == 0) {
 			System.out.println("------------- ITERATION " + counter + "--------------");
 			printValues(root);
 			System.out.println("root total: " + root.getTotal());
@@ -86,9 +87,8 @@ public class MyAI extends AI {
 
 	private void printValues(Node root) {
 		for (Node node : root.getChilds()) {
-			double value = calculateValue(node, root);
-			System.out.println("Node: " + node.getColumn() + ", value: " + value + ", total: " + node.getTotal()
-					+ ", wins: " + node.getWins());
+			ValueObjekt valueObjekt = calculateValue(node, root, true);
+			System.out.println("Node: " + node.getColumn() + ", value: " + valueObjekt);
 		}
 	}
 
@@ -148,7 +148,7 @@ public class MyAI extends AI {
 				return path;
 			}
 
-			current = chooseBest(current);
+			current = chooseBest(current, true);
 			board = board.executeMove(new Move(current.getColumn()));
 
 		}
@@ -201,11 +201,11 @@ public class MyAI extends AI {
 		return getRandomMove(board.possibleMoves());
 	}
 
-	private Node chooseBest(Node father) {
+	private Node chooseBest(Node father, boolean considerExpansionTermin) {
 		double max = 0;
 		Node winner = null;
 		for (Node node : father.getChilds()) {
-			double value = calculateValue(node, father);
+			double value = calculateValue(node, father, considerExpansionTermin).getValue();
 			if (value >= max) {
 				max = value;
 				winner = node;
@@ -214,15 +214,30 @@ public class MyAI extends AI {
 		return winner;
 	}
 
-	private double calculateValue(Node node, Node father) {
+	private ValueObjekt calculateValue(Node node, Node father, boolean considerExpansionTermin) {
+		ValueObjekt valueObjekt = new ValueObjekt();
 		int total = node.getTotal();
-		int fatherTotal = father.getTotal();
+		double fatherTotal = father.getTotal();
 		if (total == 0) {
-			return 1000;
+			valueObjekt.setValue(1000);
+			return valueObjekt;
 		}
 		double wins = node.getWins();
 		double expansionTerm = Simulator.EXPANSIONFACTOR * Math.sqrt(Math.log(fatherTotal) / total);
-		return wins / total + expansionTerm;
+		double winavg = wins / total;
+		double value;
+		if (considerExpansionTermin) {
+			value = winavg + expansionTerm;
+		} else {
+			value = winavg;
+		}
+		valueObjekt.setExpansionTerm(expansionTerm);
+		valueObjekt.setTotal(total);
+		valueObjekt.setWinavg(winavg);
+		valueObjekt.setWins(wins);
+		valueObjekt.setValue(value);
+		valueObjekt.setFatherTotal(fatherTotal);
+		return valueObjekt;
 
 	}
 
