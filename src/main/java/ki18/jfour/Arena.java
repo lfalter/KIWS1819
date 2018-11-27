@@ -2,7 +2,7 @@ package ki18.jfour;
 
 public class Arena {
 
-	private static int CALCULATION_TIME = 10000;
+	private static int CALCULATION_TIME = 60000 * 5;
 
 	/*
 	 * welcome to the summoners rift

@@ -27,12 +27,12 @@ public class MyAI extends AI {
 		Node leaf;
 
 		Path path;
-		int value;
-		int counter = -1;
+		double value;
+		int loopcounter = -1;
 		while (true) {
 
-			counter++;
-			if (counter >= maxIterations) {
+			loopcounter++;
+			if (loopcounter >= maxIterations) {
 				if (logdetails) {
 					System.out.println("MAX ITERATIONS REACHED");
 				}
@@ -60,15 +60,15 @@ public class MyAI extends AI {
 			 */
 			backtrack(leaf, path, value);
 
-			setWinner(path.getBoard(), root, counter);
+			setWinner(path.getBoard(), root, loopcounter);
 		}
 	}
 
-	private void setWinner(Board board, Node root, int counter) {
-		Node winner = chooseBest(root, false);
+	private void setWinner(Board board, Node root, int loopcounter) {
+		Node winner = chooseBest(root, false, 0);
 		int column = winner.getColumn();
-		if (logdetails || counter % logAfterNIterations == 0) {
-			System.out.println("------------- ITERATION " + counter + "--------------");
+		if (logdetails || loopcounter % logAfterNIterations == 0) {
+			System.out.println("------------- ITERATION " + loopcounter + "--------------");
 			printValues(root);
 			System.out.println("root total: " + root.getTotal());
 			System.out.println("setmove: " + column);
@@ -77,7 +77,7 @@ public class MyAI extends AI {
 		setBestMove(new Move(column));
 	}
 
-	private void backtrack(Node leaf, Path path, int value) {
+	private void backtrack(Node leaf, Path path, double value) {
 		List<Node> ancestorLine = path.getAncestorLineList();
 		leaf.addValue(value);
 		for (Node father : ancestorLine) {
@@ -87,15 +87,16 @@ public class MyAI extends AI {
 
 	private void printValues(Node root) {
 		for (Node node : root.getChilds()) {
-			ValueObjekt valueObjekt = calculateValue(node, root, true);
+			int moveCoutner = 0;
+			ValueObjekt valueObjekt = calculateValue(node, root, true, moveCoutner);
 			System.out.println("Node: " + node.getColumn() + ", value: " + valueObjekt);
 		}
 	}
 
-	private int simulate(Node leaf, Board board) {
+	private double simulate(Node leaf, Board board) {
 		board = board.executeMove(new Move(leaf.getColumn()));
 
-		int result = -1;
+		double result = -1;
 
 		while (true) {
 
@@ -112,7 +113,7 @@ public class MyAI extends AI {
 					result = 0;
 				}
 			} else if (possibleMoves == null || possibleMoves.isEmpty()) { // then its drawn
-				result = 0;
+				result = 1 / 2;
 			}
 
 			if (result >= 0) {
@@ -136,6 +137,8 @@ public class MyAI extends AI {
 		List<Node> anchestorLine = path.getAncestorLineList();
 		Node current = root;
 
+		int moveCounter = 0;
+
 		while (true) {
 			anchestorLine.add(current);
 
@@ -148,8 +151,9 @@ public class MyAI extends AI {
 				return path;
 			}
 
-			current = chooseBest(current, true);
+			current = chooseBest(current, true, moveCounter);
 			board = board.executeMove(new Move(current.getColumn()));
+			moveCounter++;
 
 		}
 	}
@@ -201,11 +205,11 @@ public class MyAI extends AI {
 		return getRandomMove(board.possibleMoves());
 	}
 
-	private Node chooseBest(Node father, boolean considerExpansionTermin) {
+	private Node chooseBest(Node father, boolean considerExpansionTermin, int moveCounter) {
 		double max = 0;
 		Node winner = null;
 		for (Node node : father.getChilds()) {
-			double value = calculateValue(node, father, considerExpansionTermin).getValue();
+			double value = calculateValue(node, father, considerExpansionTermin, moveCounter).getValue();
 			if (value >= max) {
 				max = value;
 				winner = node;
@@ -214,7 +218,7 @@ public class MyAI extends AI {
 		return winner;
 	}
 
-	private ValueObjekt calculateValue(Node node, Node father, boolean considerExpansionTermin) {
+	private ValueObjekt calculateValue(Node node, Node father, boolean considerExpansionTermin, int moveCounter) {
 		ValueObjekt valueObjekt = new ValueObjekt();
 		int total = node.getTotal();
 		double fatherTotal = father.getTotal();
@@ -224,13 +228,21 @@ public class MyAI extends AI {
 		}
 		double wins = node.getWins();
 		double expansionTerm = Simulator.EXPANSIONFACTOR * Math.sqrt(Math.log(fatherTotal) / total);
-		double winavg = wins / total;
+		double winavg;
 		double value;
+
+		if (moveCounter % 2 == 0) {
+			winavg = wins / total; // out win avg
+		} else {
+			winavg = 1 - (wins / total); // opponents win avg
+
+		}
 		if (considerExpansionTermin) {
 			value = winavg + expansionTerm;
 		} else {
 			value = winavg;
 		}
+
 		valueObjekt.setExpansionTerm(expansionTerm);
 		valueObjekt.setTotal(total);
 		valueObjekt.setWinavg(winavg);

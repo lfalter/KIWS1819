@@ -52,7 +52,7 @@ public class Node {
 	 * 
 	 * public void setFathers(List<Node> fathers) { this.fathers = fathers; }
 	 */
-	public void addValue(int value) {
+	public void addValue(double value) {
 		total++;
 		wins += value;
 	}
