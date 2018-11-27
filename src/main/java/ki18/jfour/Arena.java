@@ -4,9 +4,10 @@ import java.util.Scanner;
 
 public class Arena {
 
-//	private static int CALCULATION_TIME = 60000 * 5;
 	private static int CALCULATION_TIME = 1000;
 	private static boolean MANUAL = true;
+	
+	private static int START = -1;
 
 	/*
 	 * welcome to the summoners rift
@@ -18,7 +19,7 @@ public class Arena {
 
 		Board b = new Board(7, 10);
 
-		int i = -1;
+		int i = START;
 		int maxMoves = 100;
 		Move move = null;
 		Scanner scanner = null;
