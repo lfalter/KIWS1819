@@ -10,6 +10,12 @@ import gerneralsearch.Simulator;
 
 public class MyAI extends AI {
 
+	private SimulationAdapter simulationAdapter = null;
+
+	public void setSimulationAdapter(SimulationAdapter simulationAdapter) {
+		this.simulationAdapter = simulationAdapter;
+	}
+
 	private Player US;
 
 	private static Random RANDOM = new Random();
@@ -17,6 +23,18 @@ public class MyAI extends AI {
 	private boolean logdetails = false;
 	private int maxIterations = 100000000;
 	private int logAfterNIterations = 100000;
+
+	private double expansionFaktor = Simulator.EXPANSIONFACTOR;
+
+	private boolean tournamentModus = true;
+
+	public double getExpansionFaktor() {
+		return expansionFaktor;
+	}
+
+	public void setExpansionFaktor(double expansionFaktor) {
+		this.expansionFaktor = expansionFaktor;
+	}
 
 	@Override
 	public void start(Board board) {
@@ -44,7 +62,9 @@ public class MyAI extends AI {
 			 */
 			path = selection(root, board); // the board contained in path has the state after the execution of the move
 											// in endNode
-
+			if (path == null) {
+				continue;
+			}
 			/*
 			 * expand
 			 */
@@ -67,12 +87,14 @@ public class MyAI extends AI {
 	private void setWinner(Board board, Node root, int loopcounter) {
 		Node winner = chooseBest(root, false, 0);
 		int column = winner.getColumn();
-		if (logdetails || loopcounter % logAfterNIterations == 0) {
-			System.out.println("------------- ITERATION " + loopcounter + "--------------");
-			printValues(root);
-			System.out.println("root total: " + root.getTotal());
-			System.out.println("setmove: " + column);
-			System.out.println("-----------------------------------------------------");
+		if (!tournamentModus) {
+			if (logdetails || loopcounter % logAfterNIterations == 0) {
+				System.out.println("------------- ITERATION " + loopcounter + "--------------");
+				printValues(root);
+				System.out.println("root total: " + root.getTotal());
+				System.out.println("setmove: " + column);
+				System.out.println("-----------------------------------------------------");
+			}
 		}
 		setBestMove(new Move(column));
 	}
@@ -127,9 +149,27 @@ public class MyAI extends AI {
 			/*
 			 * execute the next move
 			 */
-			Move nextMove = new Move(getRandomMove(board));
+			Move nextMove = getSimulationMove(board);
 			board = board.executeMove(nextMove);
 		}
+	}
+
+	/**
+	 * may be overriden
+	 * 
+	 * @param board
+	 * @return
+	 */
+	protected Move getSimulationMove(Board board) {
+
+		if (simulationAdapter != null) {
+			Move innerResult = simulationAdapter.innerSimulation(board);
+			if (innerResult != null) {
+				return innerResult;
+			}
+		}
+
+		return new Move(getRandomMove(board));
 	}
 
 	private Path selection(Node root, Board board) {
@@ -141,6 +181,10 @@ public class MyAI extends AI {
 
 		while (true) {
 			anchestorLine.add(current);
+
+			if (board.possibleMoves().isEmpty()) {
+				return null;
+			}
 
 			if (hasUnexpandedChilds(current, board)) {
 				path.setEndNode(current);
@@ -227,7 +271,7 @@ public class MyAI extends AI {
 			return valueObjekt;
 		}
 		double wins = node.getWins();
-		double expansionTerm = Simulator.EXPANSIONFACTOR * Math.sqrt(Math.log(fatherTotal) / total);
+		double expansionTerm = expansionFaktor * Math.sqrt(Math.log(fatherTotal) / total);
 		double winavg;
 		double value;
 
@@ -260,6 +304,11 @@ public class MyAI extends AI {
 	@Override
 	public String getDescription() {
 		return "monte carlo fucker";
+	}
+
+	@Override
+	public String toString() {
+		return "MyAI [expansionFaktor=" + expansionFaktor + "]";
 	}
 
 }
