@@ -19,9 +19,11 @@ public class Arena {
 		AI p1 = new MyAI();
 		Participant pp1 = new Participant();
 		pp1.setAi(p1);
+		
 		AI p2 = new RandomAI();
 		Participant pp2 = new Participant();
 		pp2.setAi(p2);
+		
 		Match match = new Match(pp1, pp2);
 
 		arena.runMatch(match, 1000, true);

@@ -7,32 +7,40 @@ public class Executor {
 	private final static String NAMEPREFIX = "AI_";
 	private final static String NAMEPREFIXRANDOM = "RANDOM_";
 
+	private final static int DEFAULT_ROUNDS = 50;
+	private final static int DEFAULT_TIME = 1000;
+
 	private static int PARTICIPANT_COUNT = 0;
 
 	public static void main(String[] args) throws InterruptedException {
 
-//		versusRandom();
-//		versusFaktors(1, 2);
-//		versusFaktors(0, 1);
-//		versusFaktors(0, 2);
-//		versusFaktors(2, 2);
-//		versusFaktors(1, 1);
-
-		int time = 1000;
-		int rounds = 50;
-		versusFaktors(1, 10, time, rounds);
-
-		versusFaktors(1, 1, time, rounds, new TrivialSimulationAdapter());
-
-//		roundRobin();
-	}
-
-	private static void versusFaktors(int i, int j, int time, int rounds,
-			TrivialSimulationAdapter trivialSimulationAdapter) {
+		versusAdapters();
 
 	}
 
-	private static void versusFaktors(int a, int b, int time, int rounds) throws InterruptedException {
+	private static void versusAdapters() throws InterruptedException {
+		Tournament tournament = new Tournament();
+
+		Participant pp1 = createParticipantWithEFaktorAndApater(1);
+		Participant pp2 = createParticipantWithEFaktor(1);
+
+		tournament.addParticipant(pp1);
+		tournament.addParticipant(pp2);
+
+		tournament.setRounds(DEFAULT_ROUNDS);
+		tournament.setCalculationTime(DEFAULT_TIME);
+
+		tournament.runTournament();
+
+		System.out.println(pp1);
+		System.out.println(pp2);
+	}
+
+	private static Participant createParticipantWithEFaktorAndApater(double i) {
+		return createParticipantWithEFaktor(1, new TrivialSimulationAdapter());
+	}
+
+	private static void versusFaktors(double a, double b, int time, int rounds) throws InterruptedException {
 		Tournament tournament = new Tournament();
 
 		Participant pp1 = createParticipantWithEFaktor(a);
@@ -48,6 +56,14 @@ public class Executor {
 
 		System.out.println(pp1);
 		System.out.println(pp2);
+	}
+
+	private static Participant createParticipantWithEFaktor(double expansionfaktor,
+			SimulationAdapter simulationAdapter) {
+		MyAI ai = new MyAI();
+		ai.setExpansionFaktor(expansionfaktor);
+		ai.setSimulationAdapter(simulationAdapter);
+		return createParticipant(ai);
 	}
 
 	private static void roundRobin() throws InterruptedException {
@@ -69,10 +85,8 @@ public class Executor {
 
 	}
 
-	private static Participant createParticipantWithEFaktor(double i) {
-		MyAI ai = new MyAI();
-		ai.setExpansionFaktor(i);
-		return createParticipant(ai);
+	private static Participant createParticipantWithEFaktor(double expansionfaktor) {
+		return createParticipantWithEFaktor(expansionfaktor, null);
 	}
 
 	private static void versusRandom() throws InterruptedException {
